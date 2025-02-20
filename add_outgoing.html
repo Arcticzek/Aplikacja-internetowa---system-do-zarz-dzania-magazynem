@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Outgoing Goods</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html" class="active">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="navbar">
+                <div>Dashboard / Add Outgoing Goods</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-fullname">Admin</span>
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Outgoing Goods</h2>
+                <p>Information About Outgoing Goods</p>
+                <div class="form-container">
+                    <h3>Add Outgoing Goods</h3>
+
+                    <form id="add-outgoing-form">
+                        <div class="form-group">
+                            <label for="entity-type">Entity Type</label>
+                            <select id="entity-type" name="entityType" required>
+                                <option value="" disabled selected>-- Select Entity Type --</option>
+                                <option value="supplier">Supplier</option>
+                                <option value="customer">Customer</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="entity-name">Entity Name</label>
+                            <select id="entity-name" name="entityName" required>
+                                <option value="" disabled selected>-- Select Entity --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="brand-name">Brand Name</label>
+                            <select id="brand-name" name="brandName" required>
+                                <option value="" disabled selected>-- Select Brand --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="item-name">Item Name</label>
+                            <select id="item-name" name="itemName" required>
+                                <option value="" disabled selected>-- Select Item --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Quantity</label>
+                            <input type="number" id="quantity" name="quantity" required>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-add" onclick="addOutgoing()">Add Data</button>
+                            <button type="button" class="btn btn-cancel" onclick="cancel()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="notificationMessage"></p>
+            <div class="dialog-buttons">
+                <button id="closeNotification" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       document.querySelectorAll('.dropdown-toggle').forEach(item => {
+    item.addEventListener('click', event => {
+        const dropdownMenu = item.nextElementSibling;
+        if (dropdownMenu) {
+            dropdownMenu.classList.toggle('show');
+        }
+    });
+});
+// Display user full name
+async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+async function fetchEntities(type) {
+    try {
+        const endpoint = type === 'supplier' ? '/api/suppliers-with-goods' : '/api/customers';
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error('Failed to fetch entities');
+
+        const entities = await response.json();
+        const entitySelect = document.getElementById('entity-name');
+        entitySelect.innerHTML = '<option value="" disabled selected>-- Select Entity --</option>';
+
+        entities.forEach(entity => {
+            const option = document.createElement('option');
+            option.value = entity._id;
+            option.textContent = type === 'supplier' ? entity.supplierName : entity.customerName;
+            option.dataset.goods = JSON.stringify(entity.goods || []);
+            entitySelect.appendChild(option);
+        });
+
+        if (type === 'supplier') {
+            entitySelect.addEventListener('change', updateBrandAndItemOptionsForSupplier);
+        } else {
+            updateBrandOptionsForCustomer();
+        }
+    } catch (error) {
+        showNotification('Error fetching entities: ' + error.message);
+    }
+}
+
+async function updateBrandOptionsForCustomer() {
+    try {
+        const response = await fetch('/api/goods');
+        if (!response.ok) throw new Error('Failed to fetch goods');
+        
+        const goods = await response.json();
+        const brandSelect = document.getElementById('brand-name');
+        brandSelect.innerHTML = '<option value="" disabled selected>-- Select Brand --</option>';
+
+        const uniqueBrands = [...new Set(goods.map(item => item.brandName))];
+        uniqueBrands.forEach(brand => {
+            const option = document.createElement('option');
+            option.value = brand;
+            option.textContent = brand;
+            brandSelect.appendChild(option);
+        });
+
+        brandSelect.addEventListener('change', () => updateItemOptionsForCustomer(goods));
+    } catch (error) {
+        showNotification('Error fetching goods: ' + error.message);
+    }
+}
+
+function updateItemOptionsForCustomer(goods) {
+    const brandSelect = document.getElementById('brand-name');
+    const selectedBrand = brandSelect.value;
+
+    const itemSelect = document.getElementById('item-name');
+    itemSelect.innerHTML = '<option value="" disabled selected>-- Select Item --</option>';
+
+    const filteredGoods = goods.filter(item =>
+        item.brandName === selectedBrand && item.itemsOK > 0
+    );
+
+    filteredGoods.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item._id;
+        option.textContent = `${item.itemName} (Available: ${item.itemsOK})`;
+        option.dataset.available = item.itemsOK;
+        itemSelect.appendChild(option);
+    });
+
+    itemSelect.addEventListener('change', () => {
+        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+        const quantityInput = document.getElementById('quantity');
+        quantityInput.placeholder = `Max: ${selectedOption.dataset.available}`;
+    });
+}
+
+function updateBrandAndItemOptionsForSupplier() {
+    const entitySelect = document.getElementById('entity-name');
+    const selectedOption = entitySelect.options[entitySelect.selectedIndex];
+    const goods = JSON.parse(selectedOption.dataset.goods || '[]');
+
+    const brandSelect = document.getElementById('brand-name');
+    brandSelect.innerHTML = '<option value="" disabled selected>-- Select Brand --</option>';
+
+    const uniqueBrands = [...new Set(goods.map(item => item.brandName))];
+    uniqueBrands.forEach(brand => {
+        const option = document.createElement('option');
+        option.value = brand;
+        option.textContent = brand;
+        brandSelect.appendChild(option);
+    });
+
+    brandSelect.addEventListener('change', () => updateItemOptionsForSupplier(goods));
+}
+
+function updateItemOptionsForSupplier(goods) {
+    const brandSelect = document.getElementById('brand-name');
+    const selectedBrand = brandSelect.value;
+
+    const itemSelect = document.getElementById('item-name');
+    itemSelect.innerHTML = '<option value="" disabled selected>-- Select Item --</option>';
+
+    const filteredGoods = goods.filter(item =>
+        item.brandName === selectedBrand && item.itemsNOK > 0
+    );
+
+    filteredGoods.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item._id;
+        option.textContent = `${item.itemName} (Available: ${item.itemsNOK})`;
+        option.dataset.available = item.itemsNOK;
+        itemSelect.appendChild(option);
+    });
+}
+
+
+async function addOutgoing() {
+  const entityType = document.getElementById('entity-type').value;
+  const entityId = document.getElementById('entity-name').value;
+  const itemId = document.getElementById('item-name').value;
+  const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+  if (!entityType || !entityId || !itemId || isNaN(quantity) || quantity <= 0) {
+    showNotification('Please fill out all fields with valid data.');
+    return;
+  }
+
+  const payload = {
+    goodsId: itemId,
+    quantity,
+  };
+
+  if (entityType === 'customer') {
+    payload.customerId = entityId;
+  } else if (entityType === 'supplier') {
+    payload.supplierId = entityId;
+  }
+
+  try {
+    const response = await fetch('/api/outgoing-goods', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      showNotification('Outgoing goods added successfully!', () => {
+        window.location.href = 'outgoing_goods.html';
+      });
+    } else {
+      const error = await response.json();
+      showNotification(`Error: ${error.message}`);
+    }
+  } catch (error) {
+    showNotification('An error occurred while adding outgoing goods: ' + error.message);
+  }
+}
+
+
+
+function cancel() {
+    window.location.href = 'outgoing_goods.html';
+}
+
+function showNotification(message, callback) {
+    const notificationDialog = document.getElementById('notificationDialog');
+    const notificationMessage = document.getElementById('notificationMessage');
+    notificationMessage.textContent = message;
+    notificationDialog.classList.remove('hidden');
+
+    document.getElementById('closeNotification').onclick = () => {
+        notificationDialog.classList.add('hidden');
+        if (callback) callback();
+    };
+}
+
+document.getElementById('entity-type').addEventListener('change', event => {
+    fetchEntities(event.target.value);
+});
+
+    </script>
+    
+</body>
+</html>

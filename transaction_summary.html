@@ -1,0 +1,258 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goods Management</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html" class="active">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Transaction / Summary</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-fullname"></span>
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            
+            <div class="table-section">
+                <h2>Transactions Management</h2>
+                <p>Search for incoming and outgoing goods in the stock</p>
+
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <label for="searchBy">Search By:</label>
+                    <select id="searchBy">
+                        <option value="itemName">Item Name</option>
+                        <option value="brandName">Brand Name</option>
+                        <option value="supplierName">Supplier Name</option>
+                        <option value="customerName">Customer Name</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search...">
+                    <button id="filterButton"><i class="fas fa-filter"></i></button>
+                    <button id="refreshButton"><i class="fas fa-sync-alt"></i></button>
+                </div>
+
+                <div class="view-data">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Goods</th>
+                                <th>Supplier</th>
+                                <th>Customer</th>
+                                <th>Quantity</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="goodsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle dropdown menu visibility
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', () => {
+                const dropdownMenu = item.nextElementSibling;
+                dropdownMenu.classList.toggle('show');
+                // Zamknij inne otwarte menu rozwijane
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    if (menu !== dropdownMenu) {
+                        menu.classList.remove('show');
+                    }
+                });
+            });
+        });
+    
+        // Fetch and display incoming and outgoing goods
+        async function fetchGoods() {
+            try {
+                const [incomingResponse, outgoingResponse] = await Promise.all([
+                    fetch('/api/incoming-goods'),
+                    fetch('/api/outgoing-goods')
+                ]);
+    
+                if (!incomingResponse.ok || !outgoingResponse.ok) {
+                    throw new Error('Failed to fetch goods data.');
+                }
+    
+                const incomingGoods = await incomingResponse.json();
+                const outgoingGoods = await outgoingResponse.json();
+    
+                const goodsTable = document.getElementById('goodsTable');
+                goodsTable.innerHTML = ''; // Clear table before loading new data
+    
+                // Add incoming goods
+                incomingGoods.forEach((item, index) => {
+                    const supplierInfo = item.supplierName
+                        ? `<strong>${item.supplierName}</strong><br>
+                           Address: ${item.address || '-'}<br>
+                           Contact: ${item.phoneNumber || '-'}` 
+                        : '-';
+    
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>
+                                Item Name: <strong>${item.itemName || '-'}</strong><br>
+                                Brand Name: ${item.brandName || '-'}
+                            </td>
+                            <td>${supplierInfo}</td>
+                            <td>-</td>
+                            <td>${item.quantity || 0}</td>
+                            <td><span class="status incoming">Incoming Goods</span></td>
+                            <td>${new Date(item.createdAt).toLocaleString()}</td>
+                            <td>
+                                <button onclick="deleteItem('${item._id}', 'incoming')"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    goodsTable.innerHTML += row;
+                });
+    
+                // Add outgoing goods
+                outgoingGoods.forEach((item, index) => {
+                    const supplierInfo = item.supplierId
+                        ? `<strong>${item.supplierId.supplierName}</strong><br>
+                           Address: ${item.supplierId.address || '-'}<br>
+                           Contact: ${item.supplierId.phoneNumber || '-'}` 
+                        : '-';
+    
+                    const customerInfo = item.customerId
+                        ? `<strong>${item.customerId.customerName}</strong><br>
+                           Address: ${item.customerId.address || '-'}<br>
+                           Contact: ${item.customerId.phoneNumber || '-'}` 
+                        : '-';
+    
+                    const row = `
+                        <tr>
+                            <td>${index + 1 + incomingGoods.length}</td>
+                            <td>
+                                Item Name: <strong>${item.goodsId?.itemName || '-'}</strong><br>
+                                Brand Name: ${item.goodsId?.brandName || '-'}
+                            </td>
+                            <td>${supplierInfo}</td>
+                            <td>${customerInfo}</td>
+                            <td>${item.quantity || 0}</td>
+                            <td><span class="status outgoing">Outgoing Goods</span></td>
+                            <td>${new Date(item.createdAt).toLocaleString()}</td>
+                            <td>
+                                <button onclick="deleteItem('${item._id}', 'outgoing')"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    goodsTable.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error fetching goods:', error);
+            }
+        }
+    
+        // Delete item
+        async function deleteItem(id, type) {
+            try {
+                const url = type === 'incoming'
+                    ? `/api/incoming-goods/${id}`
+                    : `/api/outgoing-goods/${id}`;
+                const response = await fetch(url, { method: 'DELETE' });
+    
+                if (response.ok) {
+                    fetchGoods(); // Refresh table after deletion
+                } else {
+                    const error = await response.json();
+                    console.error('Error deleting item:', error.message);
+                }
+            } catch (error) {
+                console.error('Error deleting item:', error);
+            }
+        }
+    
+        // Display user full name
+        async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Fetch data on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+            await fetchGoods();
+        });
+    </script>
+    
+</body>
+</html>

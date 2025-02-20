@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Customer</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html" class="active">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="navbar">
+                <div>Dashboard / Add Customer</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Add Customer Form -->
+            <div class="form-section">
+                <div class="form-container">
+                    <h2>Add New Customer</h2>
+                    <div id="error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
+                    <form id="add-customer-form">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name</label>
+                            <input type="text" id="customerName" name="customerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerAddress">Address</label>
+                            <input type="text" id="customerAddress" name="customerAddress" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhoneNumber">Phone Number</label>
+                            <input type="text" id="customerPhoneNumber" name="customerPhoneNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerEmail">Email</label>
+                            <input type="email" id="customerEmail" name="customerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerContactPerson">Contact Person</label>
+                            <input type="text" id="customerContactPerson" name="customerContactPerson" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerType">Customer Type</label>
+                            <select id="customerType" name="customerType" required>
+                                <option value="" disabled selected>-- Select Type --</option>
+                                <option value="Wholesale">Wholesale</option>
+                                <option value="Retail">Retail</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-add" onclick="addCustomer()">Add Customer</button>
+                            <button type="button" class="btn btn-cancel" onclick="cancel()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Add User Button -->
+        <div class="add-button">
+            <a href="customer.html"><i class="fas fa-eye"></i></a>
+        </div>
+    </div>
+
+    <!-- Custom Dialogs -->
+    <div id="notificationDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="notificationMessage"></p>
+            <div class="dialog-buttons">
+                <button id="closeNotification" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        
+         document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', event => {
+                const dropdownMenu = item.nextElementSibling;
+                if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                    dropdownMenu.classList.toggle('show');
+                }
+            });
+        });
+         // Display user full name
+         async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+
+        async function addCustomer() {
+    const formData = {
+        customerName: document.getElementById('customerName').value.trim(),
+        address: document.getElementById('customerAddress').value.trim(),
+        phoneNumber: document.getElementById('customerPhoneNumber').value.trim(),
+        email: document.getElementById('customerEmail').value.trim(),
+        contactPerson: document.getElementById('customerContactPerson').value.trim(),
+        customerType: document.getElementById('customerType').value.trim(),
+    };
+
+  
+    try {
+        const response = await fetch('http://localhost:3000/api/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && !result.error) {
+            showNotification('Customer added successfully', () => {
+                window.location.href = 'customer.html';
+            });
+        } else {
+            handleErrors(result);
+        }
+    } catch (error) {
+        showNotification('An unexpected error occurred. Please try again.');
+    }
+}
+
+
+        function handleErrors(result) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.innerText = result.message || 'An error occurred';
+            errorMessage.style.display = 'block';
+
+            document.querySelectorAll('.form-group input, .form-group select').forEach(input => {
+                input.classList.remove('error-input');
+            });
+
+            if (result.duplicateFields) {
+                result.duplicateFields.forEach(field => {
+                    const input = document.getElementById(field);
+                    if (input) input.classList.add('error-input');
+                });
+            }
+        }
+
+        function showNotification(message, callback) {
+            const notificationDialog = document.getElementById('notificationDialog');
+            const notificationMessage = document.getElementById('notificationMessage');
+            notificationMessage.textContent = message;
+            notificationDialog.classList.remove('hidden');
+
+            document.getElementById('closeNotification').onclick = () => {
+                notificationDialog.classList.add('hidden');
+                if (callback) callback();
+            };
+        }
+
+        function cancel() {
+            window.location.href = 'customer.html';
+        }
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selection Add</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html" class="active">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Selection Add</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-fullname"></span>
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selection Add Form -->
+            <div class="form-section">
+                <div class="form-container">
+                    <h2>Selection Add</h2>
+                    <div id="error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
+                    <form id="selection-add-form">
+                        <div class="form-group">
+                            <label for="itemName">Item Name</label>
+                            <input type="text" id="itemName" name="itemName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="brandName">Brand Name</label>
+                            <input type="text" id="brandName" name="brandName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemsToCheck">Items to Check</label>
+                            <input type="number" id="itemsToCheck" name="itemsToCheck" min="0" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="save-btn" id="saveSelectionButton">Save</button>
+                            <button type="button" class="cancel-btn" id="cancelButton">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialogs -->
+    <div id="customDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="dialogMessage"></p>
+            <div class="dialog-buttons">
+                <button id="closeDialog" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const goodsId = urlParams.get("id");
+
+            if (goodsId) {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/goods/${goodsId}`);
+                    if (response.ok) {
+                        const goods = await response.json();
+                        document.getElementById("itemName").value = goods.itemName || '';
+                        document.getElementById("brandName").value = goods.brandName || '';
+                        document.getElementById("itemsToCheck").value = goods.itemsToCheck || 0;
+                    } else {
+                        showCustomDialog("Error fetching goods.");
+                    }
+                } catch (error) {
+                    showCustomDialog("An error occurred while fetching goods details.");
+                }
+            }
+        });
+
+        document.getElementById("saveSelectionButton").addEventListener("click", async () => {
+    const itemsToCheckInput = parseInt(document.getElementById("itemsToCheck").value, 10);
+    if (itemsToCheckInput <= 0) {
+        showCustomDialog("Items to check must be greater than 0.");
+        return;
+    }
+
+    try {
+        const goodsId = new URLSearchParams(window.location.search).get("id");
+        console.log("Goods ID:", goodsId);
+
+        const response = await fetch(`/api/goods/${goodsId}`);
+        if (!response.ok) throw new Error("Failed to fetch goods data");
+
+        const goodsData = await response.json();
+        if (goodsData.itemsToCheck < itemsToCheckInput) {
+            showCustomDialog("Not enough items to check.");
+            return;
+        }
+
+        const selectionResponse = await fetch("/api/selection", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: goodsId,
+                quantityToSend: itemsToCheckInput,
+            }),
+        });
+
+        if (!selectionResponse.ok) throw new Error("Failed to add to selection.");
+
+        showCustomDialog("Selection successfully added!");
+        document.getElementById("closeDialog").onclick = () => {
+            window.location.href = "Selection.html";
+        };
+    } catch (error) {
+        console.error("Error during selection addition:", error);
+        showCustomDialog("An error occurred while adding selection.");
+    }
+});
+
+
+
+
+
+        function showCustomDialog(message) {
+            const dialog = document.getElementById("customDialog");
+            const dialogMessage = document.getElementById("dialogMessage");
+            dialogMessage.textContent = message;
+            dialog.classList.remove("hidden");
+
+            document.getElementById("closeDialog").onclick = () => {
+                dialog.classList.add("hidden");
+            };
+        }
+
+        document.getElementById("cancelButton").addEventListener("click", () => {
+            window.location.href = "Selection.html";
+        });
+
+// Display user full name
+async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+
+
+    </script>
+    
+</body>
+</html>

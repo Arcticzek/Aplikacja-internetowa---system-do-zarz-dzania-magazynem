@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Warehouse Management System</title>
+  <link rel="stylesheet" href="/login.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>Login</h1>
+
+      <div id="message" style="display: none; text-align: center; margin-bottom: 15px;"></div>
+
+      <form id="login-form">
+        <input type="text" name="login" id="login" placeholder="Login" required>
+        <input type="password" name="password" id="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+ document.querySelector("#login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const login = event.target.login.value.trim();
+  const password = event.target.password.value.trim();
+  const messageDiv = document.getElementById("message");
+
+  console.log("Login submitted:", login);
+  console.log("Password submitted:", password);
+
+  try {
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, password }),
+    });
+
+    console.log("Response status:", response.status);
+
+    const result = await response.json();
+    console.log("Response body:", result);
+
+    if (response.ok) {
+      messageDiv.textContent = "Login successful!";
+      messageDiv.style.color = "green";
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("usergroup", result.usergroup);
+      window.location.href = "/dashboard.html";
+    } else {
+      messageDiv.textContent = result.message || "Invalid login or password!";
+      messageDiv.style.color = "red";
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    messageDiv.textContent = "An unexpected error occurred.";
+    messageDiv.style.color = "red";
+  }
+
+  messageDiv.style.display = "block";
+});
+
+
+  </script>
+  
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Incoming Goods</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html" ><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html" class="active">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="navbar">
+                <div>Dashboard / Add Incoming Goods</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname">Admin</span>
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Incoming Goods</h2>
+                <p>Information About Incoming Goods</p>
+                <div class="form-container">
+                    <h3>Add Incoming Goods</h3>
+                    
+                    
+
+                    <form id="add-goods-form">
+                        <div class="form-group">
+                            <label for="supplier-name">Supplier Name</label>
+                            <select id="supplier-name" name="supplierName" required>
+                                <option value="" disabled selected>-- Select Supplier --</option>
+                            </select>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label for="item-name">Item Name</label>
+                            <select id="item-name" name="itemName" required>
+                                <option value="" disabled selected>-- Select Item --</option>
+                            </select>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label for="quantity">Quantity</label>
+                            <input type="number" id="quantity" name="itemsToCheck" required>
+                        </div>
+                    
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-add" onclick="addIncoming()">Add Data</button>
+                            <button type="button" class="btn btn-cancel" onclick="cancel()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="notificationDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="notificationMessage"></p>
+            <div class="dialog-buttons">
+                <button id="closeNotification" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', event => {
+                const dropdownMenu = item.nextElementSibling;
+                if (dropdownMenu) {
+                    dropdownMenu.classList.toggle('show');
+                }
+            });
+        });
+// Display user full name
+async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+        
+        async function fetchSuppliersWithGoods() {
+            try {
+                const response = await fetch('/api/suppliers-with-goods');
+                if (!response.ok) throw new Error('Failed to fetch suppliers');
+
+                const suppliersWithGoods = await response.json();
+                const supplierSelect = document.getElementById('supplier-name');
+                supplierSelect.innerHTML = '<option value="" disabled selected>-- Select Supplier --</option>';
+
+                suppliersWithGoods.forEach(supplier => {
+                    const option = document.createElement('option');
+                    option.value = supplier._id;
+                    option.textContent = supplier["supplierName"];
+                    option.dataset.goods = JSON.stringify(supplier.goods || []);
+                    supplierSelect.appendChild(option);
+                });
+
+                supplierSelect.addEventListener('change', updateItemOptions);
+            } catch (error) {
+                showNotification('Error fetching suppliers: ' + error.message);
+            }
+        }
+
+        function updateItemOptions() {
+            const supplierSelect = document.getElementById('supplier-name');
+            const selectedOption = supplierSelect.options[supplierSelect.selectedIndex];
+            const goods = JSON.parse(selectedOption.dataset.goods || '[]');
+
+            const itemSelect = document.getElementById('item-name');
+            itemSelect.innerHTML = '<option value="" disabled selected>-- Select Item --</option>';
+
+            goods.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item._id;
+                option.textContent = item["itemName"];
+                itemSelect.appendChild(option);
+            });
+        }
+
+        async function addIncoming() {
+    const supplierId = document.getElementById('supplier-name').value;
+    const itemId = document.getElementById('item-name').value;
+    const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+    if (!supplierId || !itemId || isNaN(quantity) || quantity <= 0) {
+        showNotification('Please fill out all fields with valid data.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/incoming-goods', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ supplierId, itemId, quantity }),
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showNotification('Incoming goods added successfully!', () => {
+                window.location.href = 'incoming_goods.html';
+            });
+            console.log('Response:', result);
+        } else {
+            const error = await response.json();
+            showNotification(`Error: ${error.message}`);
+        }
+    } catch (error) {
+        showNotification('An error occurred while adding incoming goods: ' + error.message);
+    }
+}
+
+
+
+
+        function cancel() {
+            window.location.href = 'incoming_goods.html';
+        }
+
+        function showNotification(message, callback) {
+            const notificationDialog = document.getElementById('notificationDialog');
+            const notificationMessage = document.getElementById('notificationMessage');
+            notificationMessage.textContent = message;
+            notificationDialog.classList.remove('hidden');
+
+            document.getElementById('closeNotification').onclick = () => {
+                notificationDialog.classList.add('hidden');
+                if (callback) callback();
+            };
+        }
+
+
+
+        document.addEventListener('DOMContentLoaded', fetchSuppliersWithGoods);
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Data</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html" class="active">Supplier</a>
+                    <a href="customer.html">Customers</a>
+                </div>
+            </div>
+            <a href="goods.html" ><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>People / Supplier</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Supplier Table -->
+            <div class="supplier-table-section">
+                <h2>Supplier</h2>
+                <p>View Data Supplier</p>
+
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <select id="searchBy">
+                        <option value="supplierName">Supplier Name</option>
+                        <option value="address">Address</option>
+                        <option value="email">Email</option>
+                        <option value="contactPerson">Contact Person</option>
+                        <option value="supplierType">Supplier Type</option>                
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search...">
+                    <button id="filterButton"><i class="fas fa-filter"></i> </button>
+                    <button id="refreshButton"><i class="fas fa-sync-alt"></i></button>
+                </div>
+
+                <div class="view-data">
+                    <h3>View Data Supplier</h3>
+                    <table id="supplierTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Supplier Name</th>
+                                <th>Address</th>
+                                <th>Phone Number</th>
+                                <th>Email</th>
+                                <th>Contact Person</th>
+                                <th>Supplier Type</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supplierList"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Supplier Button -->
+            <div class="add-button">
+                <a href="add_supplier.html"><i class="fas fa-plus"></i></a>
+            </div>
+        </div>
+
+        <!-- Custom Dialog -->
+        <div id="customDialog" class="dialog-container hidden">
+            <div class="dialog-box">
+                <p id="dialogMessage"></p>
+                <div class="dialog-buttons">
+                    <button id="confirmDelete" class="btn-confirm">Confirm</button>
+                    <button id="cancelDelete" class="btn-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Dialog -->
+        <div id="notificationDialog" class="dialog-container hidden">
+            <div class="dialog-box">
+                <p id="notificationMessage"></p>
+                <div class="dialog-buttons">
+                    <button id="closeNotification" class="btn-confirm">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle dropdown menu visibility
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', () => {
+                const dropdownMenu = item.nextElementSibling;
+                if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                    dropdownMenu.classList.toggle('show');
+                    // Close other dropdowns
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        if (menu !== dropdownMenu) {
+                            menu.classList.remove('show');
+                        }
+                    });
+                }
+            });
+        });
+    // Display user full name
+    async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+
+
+        // Fetch and display suppliers with optional filtering
+        async function fetchSuppliers(filterField = "", filterValue = "") {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+    
+                const response = await fetch('http://localhost:3000/api/suppliers', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login.html';
+                    }
+                    throw new Error(`Error fetching suppliers: ${response.statusText}`);
+                }
+    
+                const suppliers = await response.json();
+                updateSupplierList(suppliers, filterField, filterValue);
+            } catch (error) {
+                console.error('Error fetching suppliers:', error);
+            }
+        }
+    
+        // Update supplier list in the DOM
+        function updateSupplierList(suppliers, filterField, filterValue) {
+            const supplierList = document.getElementById('supplierList');
+            const totalCount = document.getElementById('totalCount');
+            supplierList.innerHTML = ''; // Clear the list
+    
+            const filteredSuppliers = suppliers.filter(supplier => {
+                if (!filterField || !filterValue) return true;
+                const fieldValue = (supplier[filterField] || "").toLowerCase();
+                return fieldValue.includes(filterValue.toLowerCase());
+            });
+    
+            filteredSuppliers.forEach((supplier, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${supplier.supplierName}</td>
+                    <td>${supplier.address}</td>
+                    <td>${supplier.phoneNumber}</td>
+                    <td>${supplier.email}</td>
+                    <td>${supplier.contactPerson}</td>
+                    <td>${supplier.supplierType}</td>
+                    <td>
+                        Created: ${new Date(supplier.createdAt).toLocaleString()} 
+                        <br>
+                        Updated: ${new Date(supplier.updatedAt).toLocaleString()}
+                    </td>
+                    <td>
+                        <a href="edit_supplier.html?id=${supplier._id}"><i class="fas fa-edit"></i></a>
+                        <button onclick="showDeleteDialog('${supplier._id}')"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                supplierList.appendChild(row);
+            });
+    
+            totalCount.textContent = `Total Suppliers: ${filteredSuppliers.length}`;
+        }
+    
+        // Filter button click event
+        document.getElementById('filterButton').addEventListener('click', () => {
+            const filterField = document.getElementById('searchBy').value;
+            const filterValue = document.getElementById('searchInput').value;
+            fetchSuppliers(filterField, filterValue);
+        });
+    
+        // Refresh button click event
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            fetchSuppliers();
+        });
+    
+        // Logout functionality
+        document.getElementById("logout-button").addEventListener("click", () => {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Show delete dialog
+        function showDeleteDialog(id) {
+            const dialog = document.getElementById("customDialog");
+            const message = document.getElementById("dialogMessage");
+            message.textContent = "Are you sure you want to delete this supplier?";
+            dialog.classList.remove('hidden');
+    
+            document.getElementById('confirmDelete').onclick = () => {
+                deleteSupplier(id);
+                dialog.classList.add('hidden');
+            };
+    
+            document.getElementById('cancelDelete').onclick = () => {
+                dialog.classList.add('hidden');
+            };
+        }
+    
+        // Delete supplier
+        async function deleteSupplier(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:3000/api/suppliers/${id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login.html';
+                    }
+                    throw new Error('Failed to delete supplier');
+                }
+    
+                showNotification('Supplier deleted successfully');
+                fetchSuppliers(); // Refresh list after deletion
+            } catch (error) {
+                console.error('Error deleting supplier:', error);
+                showNotification('An error occurred while deleting the supplier.');
+            }
+        }
+    
+        // Notification dialog
+        function showNotification(message) {
+            const notificationDialog = document.getElementById('notificationDialog');
+            const notificationMessage = document.getElementById('notificationMessage');
+            notificationMessage.textContent = message;
+            notificationDialog.classList.remove('hidden');
+    
+            document.getElementById('closeNotification').onclick = () => {
+                notificationDialog.classList.add('hidden');
+            };
+        }
+    
+        // Fetch suppliers on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchSuppliers();
+        });
+    </script>
+    
+    
+</body>
+</html>

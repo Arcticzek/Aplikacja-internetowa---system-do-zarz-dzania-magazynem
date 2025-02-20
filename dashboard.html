@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WMS Dashboard</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+          .tile .number {
+            color: rgb(85, 75, 75); /* Ustaw kolor cyfr na czarny */
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .tile .description {
+            color: black; /* Ustaw kolor napisów na czarny */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Suppliers</a>
+                    <a href="customer.html">Customers</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Dashboard</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard section -->
+            <div class="table-section">
+                <h2>Welcome to the Panel</h2>
+                
+
+                <!-- Tiles Section -->
+                <div class="view-data">
+                    <div class="tiles">
+                        <div class="tile green">
+                            <div id="incomingGoodsCount" class="number">0</div>
+                            <div class="description">Incoming Goods</div>
+                            <a href="incoming_goods.html" class="view-link">View Incoming Goods <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        <div class="tile red">
+                            <div id="outgoingGoodsCount" class="number">0</div>
+                            <div class="description">Outgoing Goods</div>
+                            <a href="outgoing_goods.html" class="view-link">View Outgoing Goods <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        <div class="tile orange">
+                            <div id="supplierCount" class="number">0</div>
+                            <div class="description">Suppliers</div>
+                            <a href="supplier.html" class="view-link">View Suppliers Info <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        <div class="tile blue">
+                            <div id="customerCount" class="number">0</div>
+                            <div class="description">Customers</div>
+                            <a href="customer.html" class="view-link">View Customers Info <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        <div class="tile purple">
+                            <div id="selectionCount" class="number">0</div>
+                            <div class="description">Selection Area</div>
+                            <a href="Selection.html" class="view-link">View Selection Info <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle dropdown menu visibility
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', event => {
+                const dropdownMenu = item.nextElementSibling;
+                dropdownMenu.classList.toggle('show');
+                // Close other dropdowns if needed
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    if (menu !== dropdownMenu) {
+                        menu.classList.remove('show');
+                    }
+                });
+            });
+        });
+    
+        // Fetch counts for dashboard tiles
+        async function fetchCounts() {
+            const endpoints = [
+                { id: 'incomingGoodsCount', url: 'http://localhost:3000/api/incoming-goods/count' },
+                { id: 'outgoingGoodsCount', url: 'http://localhost:3000/api/outgoing-goods/count' },
+                { id: 'supplierCount', url: 'http://localhost:3000/api/suppliers/total' },
+                { id: 'customerCount', url: 'http://localhost:3000/api/customers/total' },
+                { id: 'selectionCount', url: 'http://localhost:3000/api/selection/total' },
+            ];
+    
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint.url);
+                    if (!response.ok) {
+                        console.error(`Failed to fetch ${endpoint.url}: ${response.status}`);
+                        document.getElementById(endpoint.id).textContent = "Error";
+                        continue;
+                    }
+                    const data = await response.json();
+                    document.getElementById(endpoint.id).textContent = data.count || 0;
+                } catch (error) {
+                    console.error(`Error fetching ${endpoint.url}:`, error);
+                    document.getElementById(endpoint.id).textContent = "Error";
+                }
+            }
+        }
+    
+        // Display user full name
+        async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+            await fetchCounts();
+        });
+    </script>
+    
+</body>
+</html>

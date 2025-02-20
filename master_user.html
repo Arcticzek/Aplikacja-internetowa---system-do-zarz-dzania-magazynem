@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master User</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html" class="active">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>People / User</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Table -->
+            <div class="table-section">
+                <h2>Users</h2>
+                <p>Information About User</p>
+                <div class="view-data">
+                    <div class="search-bar">
+                        <label for="searchBy">Search By:</label>
+                        <select id="searchBy">
+                            <option value="fullname">Fullname</option>
+                            <option value="usergroup">Usergroup</option>
+                            <option value="address">Address</option>
+                            <option value="phone">Phone Number</option>
+                            <option value="email">Email</option>
+                        </select>
+                        <input type="text" id="searchInput" placeholder="Search...">
+                        <button id="filterButton"><i class="fas fa-filter"></i></button>
+                        <button id="refreshButton"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                    <table id="userTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Full name</th>
+                                <th>Usergroup</th>
+                                <th>Password</th>
+                                <th>Address</th>
+                                <th>Phone number</th>
+                                <th>Email</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userList"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add User Button -->
+            <div class="add-button">
+                <a href="add_user.html"><i class="fas fa-plus"></i></a>
+            </div>
+        </div>
+
+        <!-- custom dialog -->
+        <div id="customDialog" class="dialog-container hidden">
+            <div class="dialog-box">
+                <p id="dialogMessage"></p>
+                <div class="dialog-buttons">
+                    <button id="confirmDelete" class="btn-confirm">Confirm</button>
+                    <button id="cancelDelete" class="btn-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="notificationDialog" class="dialog-container hidden">
+            <div class="dialog-box">
+                <p id="notificationMessage"></p>
+                <div class="dialog-buttons">
+                    <button id="closeNotification" class="btn-confirm">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="adminCredentialDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p>Please provide admin credentials to proceed:</p>
+            <input type="text" id="adminLogin" placeholder="Admin Login">
+            <input type="password" id="adminPassword" placeholder="Admin Password">
+            <div class="dialog-buttons">
+                <button id="confirmAdmin" class="btn-confirm">Confirm</button>
+                <button id="cancelAdmin" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+    item.addEventListener('click', () => {
+        const dropdownMenu = item.nextElementSibling;
+        if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+            dropdownMenu.classList.toggle('show');
+        }
+    });
+});
+// Display user full name
+async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+async function loadUsers(filterField = "", filterValue = "") {
+    try {
+        const response = await fetch('/get-users');
+        if (!response.ok) throw new Error("Failed to fetch users.");
+        const users = await response.json();
+        const userList = document.getElementById('userList');
+        userList.innerHTML = ''; // Clear existing data
+
+        users
+            .filter(user => {
+                if (!filterField || !filterValue) return true;
+                return user[filterField]?.toLowerCase().includes(filterValue.toLowerCase());
+            })
+            .forEach((user, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${user.fullname}</td>
+                    <td>${user.usergroup}</td>
+                    <td>*******</td>
+                    <td>${user.address}</td>
+                    <td>${user.phone}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        Created: ${new Date(user.createdAt).toLocaleString()} 
+                        <br>
+                        Updated: ${new Date(user.updatedAt).toLocaleString()}
+                    </td>
+                    <td>
+                        <a href="edit_master_user.html?id=${user._id}"><i class="fas fa-edit"></i></a>
+                        <button onclick="showDeleteDialog('${user._id}', '${user.usergroup}')"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                userList.appendChild(tr);
+            });
+    } catch (error) {
+        console.error("Error loading users:", error);
+        showNotification("Failed to load users.", false);
+    }
+}
+
+document.getElementById('filterButton').addEventListener('click', () => {
+    const filterField = document.getElementById('searchBy').value;
+    const filterValue = document.getElementById('searchInput').value;
+    loadUsers(filterField, filterValue);
+});
+
+document.getElementById('refreshButton').addEventListener('click', () => {
+    location.reload();
+});
+
+window.onload = loadUsers;
+
+// Show dialog for deleting user
+function showDeleteDialog(userId, userGroup) {
+    const dialog = document.getElementById("customDialog");
+    const message = document.getElementById("dialogMessage");
+
+    if (userGroup === "Admin" || userGroup === "Warehouseman") {
+        message.textContent = "To delete an Admin user, please confirm your credentials.";
+        document.getElementById('confirmDelete').onclick = () => {
+            showAdminCredentialDialog(userId);
+            dialog.classList.add('hidden');
+        };
+    } else {
+        message.textContent = "Are you sure you want to delete this user?";
+        document.getElementById('confirmDelete').onclick = () => {
+            deleteUser(userId);
+            dialog.classList.add('hidden');
+        };
+    }
+
+    document.getElementById('cancelDelete').onclick = () => {
+        dialog.classList.add('hidden');
+    };
+
+    dialog.classList.remove('hidden');
+}
+
+// Show admin credential dialog
+function showAdminCredentialDialog(userId) {
+    const dialog = document.getElementById("adminCredentialDialog");
+    const loginInput = document.getElementById("adminLogin");
+    const passwordInput = document.getElementById("adminPassword");
+
+    loginInput.value = '';
+    passwordInput.value = '';
+
+    document.getElementById('confirmAdmin').onclick = async () => {
+        const adminLogin = loginInput.value;
+        const adminPassword = passwordInput.value;
+
+        if (!adminLogin || !adminPassword) {
+            showNotification("Admin login and password are required.", false);
+            return;
+        }
+
+        deleteUser(userId, adminLogin, adminPassword);
+        dialog.classList.add('hidden');
+    };
+
+    document.getElementById('cancelAdmin').onclick = () => {
+        dialog.classList.add('hidden');
+    };
+
+    dialog.classList.remove('hidden');
+}
+
+// Function to delete user
+async function deleteUser(userId, adminLogin, adminPassword) {
+  try {
+    const response = await fetch(`/delete-user/${userId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`, // Token musi być obecny
+      },
+      body: JSON.stringify({ login: adminLogin, password: adminPassword }), // Przesyłanie loginu i hasła
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      showNotification(result.message, true, () => location.reload());
+    } else {
+      showNotification(result.message, false, () => {
+        if (response.status === 401) {
+          window.location.href = "/login.html"; // Przekierowanie na login
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    showNotification("An error occurred while trying to delete the user.", false);
+  }
+}
+
+function authenticateUser(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "No token provided. Unauthorized access." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, "0Kc549HQ4iZ691RKj50hewjU5OdcdmF1QOFjq9dEz0kkWaKBa1OYojdYm8pLJQ7O");
+    req.user = decoded; // Dekodowane dane użytkownika
+    next();
+  } catch (err) {
+    console.error("JWT verification failed:", err);
+    return res.status(401).json({ message: "Invalid or expired token." });
+  }
+}
+
+
+// Notification dialog
+function showNotification(message, isSuccess, callback) {
+    const notificationDialog = document.getElementById('notificationDialog');
+    const notificationMessage = document.getElementById('notificationMessage');
+
+    notificationMessage.textContent = message;
+    notificationMessage.style.color = isSuccess ? "green" : "red";
+
+    notificationDialog.classList.remove('hidden');
+
+    document.getElementById('closeNotification').onclick = () => {
+        notificationDialog.classList.add('hidden');
+        if (callback) callback();
+    };
+}
+
+    </script>
+    
+</body>
+</html>

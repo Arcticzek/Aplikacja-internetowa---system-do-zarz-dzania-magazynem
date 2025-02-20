@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incoming Goods Data</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customers</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html" class="active">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Transaction / Incoming Goods</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Incoming Goods Table -->
+            <div class="table-section">
+                <h2>View Incoming Goods Data</h2>
+                <p>Search for incoming goods in the Stock</p>
+
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <label for="searchBy">Search By:</label>
+                    <select id="searchBy">
+                        <option value="itemName">Item Name</option>
+                        <option value="brandName">Brand Name</option>
+                        <option value="supplierName">Supplier Name</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search...">
+                    <button id="filterButton"><i class="fas fa-filter"></i></button>
+                    <button id="refreshButton"><i class="fas fa-sync-alt"></i></button>
+                </div>
+
+                <div class="view-data">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Goods</th>
+                                <th>From</th>
+                                <th>Quantity</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="goodsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Incoming Goods Button -->
+            <div class="add-button">
+                <a href="add_incoming.html"><i class="fas fa-plus"></i></a>
+            </div>
+
+            <!-- Custom Dialog for Deletion -->
+            <div id="customDialog" class="dialog-container hidden">
+                <div class="dialog-box">
+                    <p id="dialogMessage"></p>
+                    <div class="dialog-buttons">
+                        <button id="confirmDelete" class="btn-confirm">Confirm</button>
+                        <button id="cancelDelete" class="btn-cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Dialog -->
+            <div id="notificationDialog" class="dialog-container hidden">
+                <div class="dialog-box">
+                    <p id="notificationMessage"></p>
+                    <div class="dialog-buttons">
+                        <button id="closeNotification" class="btn-confirm">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', event => {
+                const dropdownMenu = item.nextElementSibling;
+                dropdownMenu.classList.toggle('show');
+            });
+        });
+// Display user full name
+async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+        // Fetch and display incoming goods
+        async function fetchIncomingGoods(filterField = "", filterValue = "") {
+            try {
+                const response = await fetch('/api/incoming-goods');
+                const incomingGoods = await response.json();
+
+                const goodsTable = document.getElementById('goodsTable');
+                goodsTable.innerHTML = '';
+
+                const filteredGoods = incomingGoods.filter(item => {
+                    if (!filterField || !filterValue) return true;
+                    const fieldValue = (item[filterField] || '').toLowerCase();
+                    return fieldValue.includes(filterValue.toLowerCase());
+                });
+
+                filteredGoods.forEach((item, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>
+                               Item Name: <strong>${item.itemName || 'N/A'}</strong><br>
+                               Brand Name: ${item.brandName || 'N/A'}
+                            </td>
+                            <td>
+                                Supplier Name: <strong>${item.supplierName || 'N/A'}</strong><br>
+                               Address: ${item.address || 'N/A'}<br>
+                               Contact: ${item.phoneNumber || 'N/A'}
+                            </td>
+                            <td>${item.quantity || 0}</td>
+                            <td>${new Date(item.createdAt).toLocaleString()}</td>
+                            <td>
+                                <button onclick="showDeleteDialog('${item._id}')"><i class="fas fa-trash-alt"></i> </button>
+                            </td>
+                        </tr>
+                    `;
+                    goodsTable.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error fetching incoming goods:', error);
+            }
+        }
+
+        // Show delete confirmation dialog
+        function showDeleteDialog(id) {
+            const dialog = document.getElementById('customDialog');
+            const message = document.getElementById('dialogMessage');
+            message.textContent = "Are you sure you want to delete this incoming item?";
+            dialog.classList.remove('hidden');
+
+            document.getElementById('confirmDelete').onclick = () => {
+                deleteItem(id);
+                dialog.classList.add('hidden');
+            };
+
+            document.getElementById('cancelDelete').onclick = () => {
+                dialog.classList.add('hidden');
+            };
+        }
+
+        // Delete an incoming item
+        async function deleteItem(id) {
+    try {
+        const response = await fetch(`/api/incoming-goods/${id}`, { method: 'DELETE' });
+
+        if (response.ok) {
+            showNotification("Item deleted successfully");
+            fetchIncomingGoods(); // Odśwież listę po usunięciu
+        } else {
+            const error = await response.json();
+            showNotification(`Failed to delete item: ${error.message}`);
+        }
+    } catch (error) {
+        console.error("Error deleting incoming goods:", error);
+        showNotification("An error occurred while deleting the item.");
+    }
+}
+
+
+        // Show notification
+        function showNotification(message) {
+            const notificationDialog = document.getElementById('notificationDialog');
+            const notificationMessage = document.getElementById('notificationMessage');
+            notificationMessage.textContent = message;
+            notificationDialog.classList.remove('hidden');
+
+            document.getElementById('closeNotification').onclick = () => {
+                notificationDialog.classList.add('hidden');
+            };
+        }
+
+        // Filter button event
+        document.getElementById('filterButton').addEventListener('click', () => {
+            const filterField = document.getElementById('searchBy').value;
+            const filterValue = document.getElementById('searchInput').value;
+            fetchIncomingGoods(filterField, filterValue);
+        });
+
+        // Refresh button event
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            fetchIncomingGoods();
+        });
+
+        // Fetch data on page load
+        fetchIncomingGoods();
+    </script>
+    
+</body>
+</html>

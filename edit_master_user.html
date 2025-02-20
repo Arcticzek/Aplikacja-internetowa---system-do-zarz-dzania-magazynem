@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Master User</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Dashboard / Edit Master User</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Edit Master User Form -->
+            <div class="form-section">
+                <div class="form-container">
+                    <h2>Edit Master User</h2>
+                    <div id="error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
+                    <form id="edit-master-user-form">
+                        <div class="form-group">
+                            <label for="fullname">Full Name</label>
+                            <input type="text" id="fullname" name="fullname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="usergroup">User Group</label>
+                            <select id="usergroup" name="usergroup" required>
+                                <option value="Warehouseman">Warehouseman</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <input type="text" id="address" name="address">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="text" id="phone" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="save-btn" id="saveUserButton">Save Changes</button>
+                            <button type="button" class="cancel-btn" id="cancelButton">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialogs -->
+    <div id="customDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="dialogMessage">Are you sure you want to proceed?</p>
+            <div class="dialog-buttons">
+                <button id="confirmAction" class="btn-confirm">Confirm</button>
+                <button id="cancelAction" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', () => {
+                const dropdownMenu = item.nextElementSibling;
+                dropdownMenu.classList.toggle('show');
+            });
+        });
+
+        // Display user full name
+        async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+
+        // Fetch user details based on ID
+        async function fetchUser() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get("id");
+
+            if (!userId) {
+                alert("User ID is missing in the URL.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/get-user/${userId}`);
+                if (!response.ok) throw new Error(`Error fetching user: ${response.statusText}`);
+                const user = await response.json();
+
+                document.getElementById("fullname").value = user.fullname || '';
+                document.getElementById("usergroup").value = user.usergroup || '';
+                document.getElementById("address").value = user.address || '';
+                document.getElementById("phone").value = user.phone || '';
+                document.getElementById("email").value = user.email || '';
+            } catch (error) {
+                console.error("Error fetching user:", error);
+                alert("An error occurred while fetching user details.");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchUser);
+
+        // Save User
+        document.getElementById("saveUserButton").addEventListener("click", () => {
+    const dialog = document.getElementById("customDialog");
+    dialog.classList.remove("hidden");
+    document.getElementById("dialogMessage").textContent = "Are you sure you want to save changes?";
+
+    document.getElementById("confirmAction").onclick = async () => {
+        dialog.classList.add("hidden");
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get("id");
+        const updatedUser = {
+            fullname: document.getElementById("fullname").value,
+            usergroup: document.getElementById("usergroup").value,
+            address: document.getElementById("address").value,
+            phone: document.getElementById("phone").value,
+            email: document.getElementById("email").value
+        };
+
+        try {
+            const response = await fetch(`http://localhost:3000/update-user/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedUser)
+            });
+
+            if (response.ok) {
+                window.location.href = 'master_user.html'; // Przekierowanie po zapisaniu zmian
+            } else {
+                const error = await response.json();
+                const notificationDialog = document.getElementById("notificationDialog");
+                document.getElementById("notificationMessage").textContent = `Error updating user: ${error.message}`;
+                notificationDialog.classList.remove("hidden");
+
+                document.getElementById("closeNotification").onclick = () => {
+                    notificationDialog.classList.add("hidden");
+                };
+            }
+        } catch (error) {
+            console.error('Error updating user:', error);
+            const notificationDialog = document.getElementById("notificationDialog");
+            document.getElementById("notificationMessage").textContent = "An error occurred while updating the user.";
+            notificationDialog.classList.remove("hidden");
+
+            document.getElementById("closeNotification").onclick = () => {
+                notificationDialog.classList.add("hidden");
+            };
+        }
+    };
+
+    document.getElementById("cancelAction").onclick = () => {
+        dialog.classList.add("hidden");
+    };
+});
+
+// Show cancel confirmation dialog
+document.getElementById("cancelButton").addEventListener("click", () => {
+    const dialog = document.getElementById("customDialog");
+    dialog.classList.remove("hidden");
+    document.getElementById("dialogMessage").textContent = "Are you sure you want to discard changes?";
+
+    document.getElementById("confirmAction").onclick = () => {
+        dialog.classList.add("hidden");
+        window.location.href = 'master_user.html'; // Przekierowanie po odrzuceniu zmian
+    };
+
+    document.getElementById("cancelAction").onclick = () => {
+        dialog.classList.add("hidden");
+    };
+});
+
+       
+    </script>
+    
+</body>
+</html>

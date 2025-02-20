@@ -1,0 +1,148 @@
+/* Reset stylów */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+  background: url('assets/warehouse-background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #333;
+}
+
+/* Styl kontenera logowania */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  animation: fadeIn 1s ease-out; /* Animacja łagodnego pojawiania */
+}
+
+/* Styl logo */
+.logo {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 20px;
+  animation: slideDown 1s ease-out; /* Animacja przesunięcia z góry */
+}
+
+/* Styl głównego pudełka logowania */
+.login-box {
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 40px 30px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  max-width: 350px;
+  width: 100%;
+}
+
+h1 {
+  margin-bottom: 20px;
+  font-size: 26px;
+  color: #444;
+  font-weight: 600;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Styl inputów */
+input {
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+  outline: none;
+}
+
+/* Styl przycisku */
+button {
+  padding: 12px;
+  font-size: 16px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Animacje */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.error-message {
+  margin-top: 15px;
+  padding: 10px;
+  font-size: 14px;
+  color: #721c24; /* Ciemnoczerwony tekst */
+  background-color: #f8d7da; /* Jasnoczerwone tło */
+  border: 1px solid #f5c6cb; /* Obramowanie */
+  border-radius: 4px;
+  text-align: center;
+}
+
+.success-message {
+  margin-top: 15px;
+  padding: 10px;
+  font-size: 14px;
+  color: #155724; /* Ciemnozielony tekst */
+  background-color: #d4edda; /* Jasnozielone tło */
+  border: 1px solid #c3e6cb; /* Obramowanie */
+  border-radius: 4px;
+  text-align: center;
+}
+
+.tiles .number {
+  color: black; /* Ustaw kolor cyfr na czarny */
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.tiles .description {
+  color: black; /* Ustaw kolor napisów na czarny */
+}

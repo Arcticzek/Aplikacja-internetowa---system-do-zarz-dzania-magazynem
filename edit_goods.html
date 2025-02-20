@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Goods</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Supplier</a>
+                    <a href="customer.html">Customer</a>
+                </div>
+            </div>
+            <a href="goods.html" class="active"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Dashboard / Edit Goods</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i> 
+                    <span id="user-fullname"></span> 
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Edit Goods Form -->
+            <div class="form-section">
+                <div class="form-container">
+                    <h2>Edit Goods</h2>
+                    <div id="error-message" style="display: none; color: red; margin-bottom: 10px;"></div>
+                    <form id="edit-goods-form">
+                        <div class="form-group">
+                            <label for="itemName">Item Name</label>
+                            <input type="text" id="itemName" name="itemName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="brandName">Brand Name</label>
+                            <input type="text" id="brandName" name="brandName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemsToCheck">Items To Check</label>
+                            <input type="number" id="itemsToCheck" name="itemsToCheck" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemsOK">Items OK</label>
+                            <input type="number" id="itemsOK" name="itemsOK" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemsNOK">Items NOK</label>
+                            <input type="number" id="itemsNOK" name="itemsNOK" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="save-btn" id="saveGoodsButton">Save Changes</button>
+                            <button type="button" class="cancel-btn" id="cancelButton">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialogs -->
+    <div id="customDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="dialogMessage">Are you sure?</p>
+            <div class="dialog-buttons">
+                <button id="confirmAction" class="btn-confirm">Confirm</button>
+                <button id="cancelAction" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', () => {
+                const dropdownMenu = item.nextElementSibling;
+                dropdownMenu.classList.toggle('show');
+            });
+        });
+
+       // Display user full name
+       async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+
+        // Fetch goods details based on ID
+        async function fetchGoods() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const goodsId = urlParams.get("id");
+
+            if (!goodsId) {
+                const dialog = document.getElementById("customDialog");
+                document.getElementById("dialogMessage").textContent = "Goods ID is missing in the URL.";
+                dialog.classList.remove("hidden");
+                document.getElementById("confirmAction").onclick = () => dialog.classList.add("hidden");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/goods/${goodsId}`);
+                if (!response.ok) throw new Error(`Error fetching goods: ${response.statusText}`);
+                const goods = await response.json();
+
+                document.getElementById("itemName").value = goods.itemName || '';
+                document.getElementById("brandName").value = goods.brandName || '';
+                document.getElementById("itemsToCheck").value = goods.itemsToCheck || 0;
+                document.getElementById("itemsOK").value = goods.itemsOK || 0;
+                document.getElementById("itemsNOK").value = goods.itemsNOK || 0;
+            } catch (error) {
+                console.error("Error fetching goods:", error);
+                const dialog = document.getElementById("customDialog");
+                document.getElementById("dialogMessage").textContent = "An error occurred while fetching goods details.";
+                dialog.classList.remove("hidden");
+                document.getElementById("confirmAction").onclick = () => dialog.classList.add("hidden");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchGoods);
+
+        // Save Goods with dialog
+        document.getElementById("saveGoodsButton").addEventListener("click", async () => {
+    const goodsId = new URLSearchParams(window.location.search).get("id");
+    const updatedGoods = {
+        itemName: document.getElementById("itemName").value,
+        brandName: document.getElementById("brandName").value,
+        itemsToCheck: parseInt(document.getElementById("itemsToCheck").value, 10),
+        itemsOK: parseInt(document.getElementById("itemsOK").value, 10),
+        itemsNOK: parseInt(document.getElementById("itemsNOK").value, 10),
+    };
+
+    try {
+        const response = await fetch(`/api/goods/${goodsId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedGoods),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            showCustomDialog(`Error updating goods: ${error.message}`);
+            return;
+        }
+
+        window.location.href = "goods.html";
+    } catch (error) {
+        console.error("Error updating goods:", error);
+        showCustomDialog("An unexpected error occurred while updating the goods.");
+    }
+});
+
+
+    document.getElementById("cancelAction").onclick = () => {
+        dialog.classList.add("hidden");
+    };
+
+
+        
+
+        // Cancel Edit with dialog
+        document.getElementById("cancelButton").addEventListener("click", () => {
+            const dialog = document.getElementById("customDialog");
+            document.getElementById("dialogMessage").textContent = "Are you sure you want to discard changes?";
+            dialog.classList.remove("hidden");
+
+            document.getElementById("confirmAction").onclick = () => {
+                dialog.classList.add("hidden");
+                window.location.href = 'goods.html';
+            };
+
+            document.getElementById("cancelAction").onclick = () => {
+                dialog.classList.add("hidden");
+            };
+        });
+    </script>
+    
+</body>
+</html>

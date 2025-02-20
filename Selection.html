@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selection Data</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html" class="active"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Suppliers</a>
+                    <a href="customer.html">Customers</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html">Summary</a>
+                </div>
+                <div class="dropdown">
+                    <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-menu">
+                        <a href="report_incoming.html">Incoming Goods</a>
+                        <a href="report_outgoing.html">Outgoing Goods</a>
+                        <a href="report_summary.html">Summary</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Navbar -->
+            <div class="navbar">
+                <div>Selection Area</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-fullname"></span>
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selection Table -->
+            <div class="table-section">
+                <h2>View Selection Data</h2>
+                <p>Manage and view selection data</p>
+
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <label for="searchBy">Search By:</label>
+                    <select id="searchBy">
+                        <option value="itemName">Item Name</option>
+                        <option value="brandName">Brand Name</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search...">
+                    <button id="filterButton"><i class="fas fa-filter"></i></button>
+                    <button id="refreshButton"><i class="fas fa-sync-alt"></i></button>
+                </div>
+
+                <div class="view-data">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Item Name</th>
+                                <th>Brand Name</th>
+                                <th>Supplier</th>
+                                <th>Items to Check</th>
+                                <th>Items OK</th>
+                                <th>Items NOK</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="selectionTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Dialog for Selection -->
+        <div id="selectionDialog" class="dialog-container hidden">
+            <div class="dialog-box">
+                <p id="selectionMessage"></p>
+                <div class="dialog-buttons">
+                    <button id="closeSelectionDialog" class="btn-confirm">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle dropdown menu visibility
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', () => {
+                const dropdownMenu = item.nextElementSibling;
+                if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                    dropdownMenu.classList.toggle('show');
+                    // Close other dropdowns
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        if (menu !== dropdownMenu) {
+                            menu.classList.remove('show');
+                        }
+                    });
+                }
+            });
+        });
+
+         // Display user full name
+         async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+    
+        // Fetch and display selection data with optional filtering
+        async function fetchSelection(filterField = "", filterValue = "") {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+    
+                const response = await fetch('/api/selection', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login.html';
+                    }
+                    throw new Error("Failed to fetch selection data.");
+                }
+    
+                const selections = await response.json();
+                updateSelectionTable(selections, filterField, filterValue);
+            } catch (error) {
+                console.error('Error fetching selection data:', error);
+            }
+        }
+    
+        // Update selection table in the DOM
+        function updateSelectionTable(selections, filterField, filterValue) {
+            const selectionTable = document.getElementById('selectionTable');
+            selectionTable.innerHTML = '';
+    
+            selections
+                .filter(selection => {
+                    if (!filterField || !filterValue) return true;
+                    const fieldValue = selection[filterField]?.toLowerCase() || "";
+                    return fieldValue.includes(filterValue.toLowerCase());
+                })
+                .forEach((selection, index) => {
+                    const row = `
+                        <tr data-id="${selection._id}">
+                            <td>${index + 1}</td>
+                            <td>${selection.itemName || '-'}</td>
+                            <td>${selection.brandName || '-'}</td>
+                            <td>${selection.supplierId?.supplierName || '-'}</td>
+                            <td>${selection.itemsToCheck || 0}</td>
+                            <td>${selection.itemsOK || 0}</td>
+                            <td>${selection.itemsNOK || 0}</td>
+                            <td>
+                                <button onclick="startSelection('${selection._id}', ${selection.itemsToCheck})" class="btn selection">Start Selection</button>
+                                <button onclick="sendBackToGoods('${selection._id}', '${selection.itemName}', ${selection.itemsOK}, ${selection.itemsNOK})" class="btn send back">Send Back</button>
+                            </td>
+                        </tr>
+                    `;
+                    selectionTable.innerHTML += row;
+                });
+        }
+    
+        // Start selection process
+        async function startSelection(selectionId, itemsToCheck) {
+            if (itemsToCheck <= 0) {
+                showSelectionDialog('No items to check!');
+                return;
+            }
+    
+            const percentageNOK = Math.floor(Math.random() * 50) + 1;
+            const itemsNOK = Math.floor((itemsToCheck * percentageNOK) / 100);
+            const itemsOK = itemsToCheck - itemsNOK;
+    
+            try {
+                const response = await fetch(`/api/selection/${selectionId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        itemsToCheck: 0,
+                        itemsNOK,
+                        itemsOK,
+                    }),
+                });
+    
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error:', errorData.message);
+                    showSelectionDialog('Failed to update selection. Please try again.');
+                    return;
+                }
+    
+                const updatedSelection = await response.json();
+                showSelectionDialog(`Selection completed successfully! Items OK: ${updatedSelection.itemsOK}, Items NOK: ${updatedSelection.itemsNOK}`);
+            } catch (error) {
+                console.error('Error during selection:', error);
+                showSelectionDialog('An error occurred during selection. Please try again.');
+            }
+        }
+    
+        // Send items back to goods
+        async function sendBackToGoods(selectionId, itemName, itemsOK, itemsNOK) {
+            if (itemsOK <= 0 && itemsNOK <= 0) {
+                showSelectionDialog("Cannot send back items as OK and NOK counts are zero.");
+                return;
+            }
+    
+            try {
+                const goodsResponse = await fetch(`/api/goods/itemName/${encodeURIComponent(itemName)}`);
+                if (!goodsResponse.ok) throw new Error("Failed to fetch goods data.");
+    
+                const goodsData = await goodsResponse.json();
+    
+                const updatedItemsOK = (goodsData.itemsOK || 0) + itemsOK;
+                const updatedItemsNOK = (goodsData.itemsNOK || 0) + itemsNOK;
+    
+                const updateResponse = await fetch(`/api/goods/${goodsData._id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        itemsOK: updatedItemsOK,
+                        itemsNOK: updatedItemsNOK,
+                    }),
+                });
+    
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    console.error("Update error details:", errorData);
+                    throw new Error("Failed to update goods data.");
+                }
+    
+                const deleteResponse = await fetch(`/api/selection/${selectionId}`, { method: "DELETE" });
+                if (!deleteResponse.ok) throw new Error("Failed to delete selection entry.");
+    
+                fetchSelection();
+                showSelectionDialog("Items sent back successfully.");
+            } catch (error) {
+                console.error("Error during send back:", error);
+                showSelectionDialog("An error occurred while sending back items.");
+            }
+        }
+    
+        // Show selection dialog with message
+        function showSelectionDialog(message) {
+            const dialog = document.getElementById('selectionDialog');
+            const dialogMessage = document.getElementById('selectionMessage');
+            dialogMessage.textContent = message;
+            dialog.classList.remove('hidden');
+    
+            document.getElementById('closeSelectionDialog').onclick = () => {
+                dialog.classList.add('hidden');
+                fetchSelection();
+            };
+        }
+    
+        // Filter button click event
+        document.getElementById('filterButton').addEventListener('click', () => {
+            const filterField = document.getElementById('searchBy').value;
+            const filterValue = document.getElementById('searchInput').value;
+            fetchSelection(filterField, filterValue);
+        });
+    
+        // Refresh button click event
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            fetchSelection();
+        });
+    
+        // Fetch selection data on page load
+        document.addEventListener('DOMContentLoaded', fetchSelection);
+    </script>
+    
+</body>
+</html>

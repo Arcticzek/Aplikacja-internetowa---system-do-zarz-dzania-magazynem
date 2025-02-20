@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report summary</title>
+    <link rel="stylesheet" href="/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-box"></i> WMS</h2>
+            <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="Selection.html"><i class="fas fa-user"></i> Selection Area</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-users"></i> People <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="master_user.html">Users</a>
+                    <a href="supplier.html">Suppliers</a>
+                    <a href="customer.html">Customers</a>
+                </div>
+            </div>
+            <a href="goods.html"><i class="fas fa-boxes"></i> Master of Goods</a>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-exchange-alt"></i> Transaction <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="incoming_goods.html">Incoming Goods</a>
+                    <a href="outgoing_goods.html">Outgoing Goods</a>
+                    <a href="transaction_summary.html">Summary</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Report <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="report_incoming.html">Incoming Goods</a>
+                    <a href="report_outgoing.html">Outgoing Goods</a>
+                    <a href="report_summary.html" class="active">Summary</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="navbar">
+                <div>Report / Summary</div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-fullname"></span>
+                    <button id="logout-button" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Section -->
+            <div class="table-section">
+                <h2>View Report summary</h2>
+                <p>Generate summary of incoming and outgoing transactions.</p>
+
+                <div class="search-bar">
+                    <label for="supplierFilter">Customer/Supplier:</label>
+                    <select id="supplierFilter">
+                        <option value="">All Customers/Suppliers</option>
+                    </select>
+
+                    <label for="dateRange">Date Range:</label>
+                    <select id="dateRange">
+                        <option value="today" selected>Today</option>
+                        <option value="week">Previous Week</option>
+                        <option value="month">Previous Month</option>
+                        <option value="3months">Last 3 Months</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="year">Last Year</option>
+                        <option value="custom">Custom</option>
+                    </select>
+
+                    <input type="date" id="customStartDate" style="display:none;">
+                    <input type="date" id="customEndDate" style="display:none;">
+                    <button id="applyFilters"><i class="fas fa-filter"></i> Apply</button>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-container">
+                    <h3>Incoming Goods</h3>
+                    <canvas id="incomingChart" width="800" height="400"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Outgoing Goods</h3>
+                    <canvas id="outgoingChart" width="800" height="400"></canvas>
+                </div>
+
+                <button id="downloadReport" class="download-btn">Download summary Report PDF</button>
+            </div>
+        </div>
+    </div>
+    <div id="notificationDialog" class="dialog-container hidden">
+        <div class="dialog-box">
+            <p id="notificationMessage"></p>
+            <div class="dialog-buttons">
+                <button id="closeNotification" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', () => {
+                const dropdownMenu = item.nextElementSibling;
+                if (dropdownMenu) {
+                    dropdownMenu.classList.toggle('show');
+                }
+            });
+        });
+    // Display user full name
+    async function displayUserFullName() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html'; // Redirect to login page if token is missing
+                return;
+            }
+    
+            try {
+                const response = await fetch('http://localhost:3000/api/user-details', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details.');
+                }
+    
+                const user = await response.json();
+    
+                // Display user's full name
+                const userFullNameElement = document.getElementById('user-fullname');
+                userFullNameElement.textContent = user.fullname || "Unknown User";
+    
+                // Hide Users menu for Warehouseman group
+                if (user.usergroup === 'Warehouseman') {
+                    const usersMenu = document.querySelector('a[href="master_user.html"]');
+                    if (usersMenu) {
+                        usersMenu.style.display = 'none'; // Hide option
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html'; // Redirect to login page
+            }
+        }
+    
+        // Logout handler
+        document.getElementById("logout-button").addEventListener("click", function () {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        });
+    
+        // Initial data fetch
+        document.addEventListener('DOMContentLoaded', async () => {
+            await displayUserFullName();
+        });
+        const supplierFilter = document.getElementById('supplierFilter');
+        const dateRange = document.getElementById('dateRange');
+        const customStartDate = document.getElementById('customStartDate');
+        const customEndDate = document.getElementById('customEndDate');
+        const applyFiltersButton = document.getElementById('applyFilters');
+        const downloadButton = document.getElementById('downloadReport');
+        const incomingChartCanvas = document.getElementById('incomingChart');
+        const outgoingChartCanvas = document.getElementById('outgoingChart');
+    
+        let incomingChart, outgoingChart;
+    
+        async function loadSuppliersAndCustomers() {
+            try {
+                const response = await fetch('/api/customers-suppliers');
+                if (!response.ok) throw new Error('Failed to load data');
+    
+                const data = await response.json();
+                supplierFilter.innerHTML = '<option value="">All Customers/Suppliers</option>';
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item._id;
+                    option.textContent = item.name;
+                    supplierFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading suppliers and customers:', error);
+            }
+        }
+    
+        async function fetchData(url, filters) {
+            const query = new URLSearchParams(filters).toString();
+            const response = await fetch(`${url}?${query}`);
+            if (!response.ok) throw new Error('Failed to fetch data');
+            return await response.json();
+        }
+    
+        async function updateCharts(filters) {
+    try {
+        const incomingData = await fetchData('/api/incoming-goods/report', filters);
+        const outgoingData = await fetchData('/api/outgoing-goods/report', filters);
+
+        if (incomingChart) incomingChart.destroy();
+        if (outgoingChart) outgoingChart.destroy();
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false, // Pozwala na bardziej elastyczne wymiary
+            plugins: {
+                legend: { display: true },
+            },
+            layout: {
+                padding: 10, // Dodaj odstępy wewnątrz
+            },
+            scales: {
+                x: { title: { display: true, text: 'Date & Item Name' } },
+                y: { title: { display: true, text: 'Quantity' } },
+            },
+        };
+
+        // Incoming Chart
+        incomingChart = new Chart(incomingChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: incomingData.map(entry => `${entry.date} (${entry.itemName || 'N/A'})`),
+                datasets: [{
+                    label: 'Incoming Quantity',
+                    data: incomingData.map(entry => entry.quantity),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                }],
+            },
+            options: chartOptions,
+        });
+
+        // Outgoing Chart
+        outgoingChart = new Chart(outgoingChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: outgoingData.map(entry => `${entry.date} (${entry.itemName || 'N/A'})`),
+                datasets: [{
+                    label: 'Outgoing Quantity',
+                    data: outgoingData.map(entry => entry.quantity),
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                }],
+            },
+            options: chartOptions,
+        });
+
+        // Wymuś maksymalną wysokość
+        incomingChartCanvas.style.maxHeight = '500px';
+        outgoingChartCanvas.style.maxHeight = '500px';
+    } catch (error) {
+        console.error('Error updating charts:', error);
+    }
+}
+
+
+    
+        async function applyFilters() {
+            const filters = {
+                supplier: supplierFilter.value || '',
+                dateRange: dateRange.value || 'today',
+                customStartDate: customStartDate.value || '',
+                customEndDate: customEndDate.value || '',
+            };
+            await updateCharts(filters);
+        }
+    
+        applyFiltersButton.addEventListener('click', applyFilters);
+    
+        downloadButton.addEventListener('click', async () => {
+    try {
+        const filters = {
+            supplier: supplierFilter.value || '',
+            dateRange: dateRange.value || 'today',
+            customStartDate: customStartDate.value || '',
+            customEndDate: customEndDate.value || '',
+        };
+
+        const incomingData = await fetchData('/api/incoming-goods/report', filters);
+        const outgoingData = await fetchData('/api/outgoing-goods/report', filters);
+
+        if (!incomingData.length && !outgoingData.length) {
+            alert('No data available.');
+            return;
+        }
+
+        const incomingChartImage = incomingChartCanvas.toDataURL();
+        const outgoingChartImage = outgoingChartCanvas.toDataURL();
+
+        const response = await fetch('/api/generate-summary-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                incomingData,
+                outgoingData,
+                charts: {
+                    incoming: incomingChartImage,
+                    outgoing: outgoingChartImage,
+                },
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to generate PDF.');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'summary_Report.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Error downloading PDF:', error);
+        alert('An error occurred while generating the PDF.');
+    }
+});
+
+    
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadSuppliersAndCustomers();
+            await applyFilters();
+        });
+    
+        dateRange.addEventListener('change', () => {
+            const isCustom = dateRange.value === 'custom';
+            customStartDate.style.display = isCustom ? 'inline-block' : 'none';
+            customEndDate.style.display = isCustom ? 'inline-block' : 'none';
+        });
+    </script>
+    
+</body>
+</html>

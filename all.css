@@ -1,0 +1,989 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.logout-btn {
+    background: none;
+    border: none;
+    color: #ecf0f1;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: color 0.3s;
+}
+
+.logout-btn:hover {
+    color: #e74c3c; /* Czerwony kolor na hover */
+}
+
+
+
+
+
+/* Styl ogólny strony */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f5f7fa url('assets/warehouse-background.png') no-repeat center center fixed;
+    background-size: cover;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+
+/* Kontener główny */
+.container {
+    display: flex;
+    min-height: 100vh; /* Minimum wysokości */
+}
+/* Tiles kafelki */
+.tiles {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.tile {
+    flex: 1;
+    min-width: 200px;
+    background-color: #f5cf27;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.tile:hover {
+    transform: translateY(-5px);
+}
+
+.tile .number {
+    font-size: 36px;
+    color: #3498db;
+}
+
+.tile .description {
+    font-size: 18px;
+    color: #7f8c8d;
+}
+
+.tile .view-link {
+    margin-top: 10px;
+    display: inline-block;
+    color: #101111;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.tile.green {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.tile.red {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.tile.orange {
+    background-color: #2dc6e0;
+    color: white;
+}
+
+.tile.blue {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px; /* Szerokość sidebaru */
+    background-color: #2c3e50; /* Kolor tła sidebaru */
+    color: #ecf0f1; /* Kolor tekstu w sidebarze */
+    padding: 20px; /* Padding */
+    position: fixed; /* Pozycjonowanie */
+    height: 100%; /* Wysokość */
+    transition: transform 0.3s ease, width 0.3s ease; /* Animacja szerokości */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Cień */
+}
+
+.sidebar:hover {
+    width: 270px; /* Szerokość po najechaniu */
+}
+
+.sidebar h2 {
+    font-size: 24px; /* Rozmiar nagłówka */
+    margin-bottom: 30px; /* Margines */
+    text-align: center; /* Wyśrodkowanie */
+}
+
+.sidebar a {
+    display: block; /* Blokowe wyświetlanie */
+    color: white; /* Kolor linków */
+    padding: 15px; /* Padding */
+    text-decoration: none; /* Brak podkreślenia */
+    margin: 10px 0; /* Margines */
+    font-size: 18px; /* Rozmiar czcionki */
+    border-radius: 8px; /* Zaokrąglone rogi */
+    transition: background-color 0.3s ease, transform 0.3s; /* Animacja */
+}
+
+.sidebar a:hover {
+    background-color: #34495e; /* Kolor tła po najechaniu */
+    transform: translateX(10px); /* Przesunięcie */
+}
+
+.sidebar a.active {
+    background-color: #1abc9c; /* Kolor tła dla aktywnego linku */
+}
+
+.sidebar .fas {
+    margin-right: 10px; /* Odstęp między ikoną a tekstem */
+}
+
+
+/* Dropdown menu */
+.dropdown-menu {
+    display: none; /* Domyślnie ukryte */
+    overflow: hidden; /* Ukrycie nadmiaru treści */
+    max-height: 0; /* Początkowa wysokość */
+    transition: max-height 0.3s ease, opacity 0.3s ease; /* Animacja */
+    opacity: 0; /* Domyślna przezroczystość */
+}
+
+.dropdown-menu.show {
+    display: block; /* Wyświetlenie menu */
+    max-height: 200px; /* Maksymalna wysokość (dostosuj w razie potrzeby) */
+    opacity: 1; /* Pełna widoczność */
+}
+/* Główna zawartość */
+.main-content {
+    margin-left: 250px; /* Margines dla treści głównej */
+    padding: 40px; /* Padding */
+    background-color: #ecf0f1; /* Tło treści */
+    transition: margin-left 0.3s; /* Animacja zmiany marginesu */
+    width: calc(100% - 250px); /* Szerokość */
+}
+
+/* Navbar */
+.navbar {
+    background-color: #1abc9c; /* Kolor tła navbaru */
+    color: white; /* Kolor tekstu */
+    padding: 20px; /* Padding */
+    display: flex; /* Flexbox */
+    justify-content: space-between; /* Rozmieszczenie */
+    align-items: center; /* Wyrównanie do środka */
+    border-bottom: 2px solid #16a085; /* Dolna linia */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Cień */
+}
+
+/* Informacje o użytkowniku w navbarze */
+.navbar .user-info {
+    font-size: 20px; /* Rozmiar czcionki użytkownika */
+    font-weight: bold; /* Pogrubienie czcionki */
+}
+
+/* Sekcja formularza */
+.form-section {
+    background-color: white; /* Tło sekcji formularza */
+    padding: 20px; /* Padding */
+    border-radius: 8px; /* Zaokrąglone rogi */
+    margin-top: 20px; /* Margines górny */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Cień */
+}
+
+.form-section h2 {
+    font-size: 28px; /* Rozmiar nagłówka */
+    color: #34495e; /* Kolor nagłówka */
+}
+
+.form-section p {
+    font-size: 18px; /* Rozmiar czcionki */
+    color: #7f8c8d; /* Kolor tekstu */
+}
+
+.form-container {
+    background-color: #ecf0f1; /* Tło kontenera formularza */
+    padding: 20px; /* Padding */
+    border-radius: 8px; /* Zaokrąglone rogi */
+    margin-top: 10px; /* Margines górny */
+}
+
+.form-group {
+    margin-bottom: 15px; /* Margines dolny */
+}
+
+.form-group label {
+    margin-bottom: 5px; /* Margines dolny dla etykiety */
+    font-weight: bold; /* Pogrubienie */
+}
+
+.form-group input {
+    width: 100%; /* Szerokość na 100% */
+    padding: 10px; /* Padding */
+    border: 1px solid #bdc3c7; /* Obrys */
+    border-radius: 4px; /* Zaokrąglone rogi */
+}
+
+/* Przycisk dodania */
+.btn {
+    padding: 10px 20px; /* Padding */
+    border: none; /* Brak obrysu */
+    border-radius: 4px; /* Zaokrąglone rogi */
+    cursor: pointer; /* Kursor wskaźnika */
+    transition: background-color 0.3s, box-shadow 0.3s; /* Animacja */
+}
+
+.btn-add {
+    background-color: #1abc9c; /* Kolor tła przycisku "Add Data" */
+    color: white; /* Kolor tekstu przycisku */
+}
+
+.btn-add:hover {
+    background-color: #16a085; /* Ciemniejszy kolor przy najechaniu */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Cień przy najechaniu */
+}
+
+.btn-cancel {
+    background-color: #e74c3c; /* Kolor tła przycisku "Cancel" */
+    color: white; /* Kolor tekstu przycisku */
+    margin-left: 10px; /* Margines lewy */
+}
+
+.btn-cancel:hover {
+    background-color: #c0392b; /* Ciemniejszy kolor przy najechaniu */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Cień przy najechaniu */
+}
+
+/* Sekcja tabeli */
+.table-section {
+    margin: 30px 0;
+}
+
+.table-section h2 {
+    font-size: 32px;
+    color: #34495e;
+    margin-bottom: 10px;
+}
+
+.table-section p {
+    font-size: 18px;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+/* Stylizacja tabeli */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+table th, table td {
+    padding: 15px 20px;
+    text-align: left;
+}
+
+table th {
+    background-color: #3498db;
+    color: white;
+    text-transform: uppercase;
+}
+
+table td {
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+}
+
+table tr:hover td {
+    background-color: #f0f0f0;
+}
+
+/* Pasek wyszukiwania */
+.search-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.search-bar select, .search-bar input, .search-bar button {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #bdc3c7;
+    transition: border 0.3s;
+}
+
+.search-bar input:focus, .search-bar select:focus {
+    border-color: #3498db;
+}
+
+.search-bar button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.search-bar button:hover {
+    background-color: #2980b9;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Stopka */
+.footer {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    text-align: center;
+    padding: 20px 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Animacja ładowania */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading .spinner {
+    border: 8px solid #f3f3f3; /* Szary */
+    border-top: 8px solid #3498db; /* Niebieski */
+    border-radius: 50%;
+    width: 40px; /* Szerokość */
+    height: 40px; /* Wysokość */
+    animation: spin 1s linear infinite; /* Animacja obrotu */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.save-btn, .cancel-btn {
+    padding: 8px 16px; /* Wygodne odstępy */
+    border-radius: 5px; /* Zaokrąglone krawędzie */
+    border: none; /* Usuń domyślne obramowanie */
+    cursor: pointer; /* Wskaźnik kursora na przycisk */
+    font-size: 14px; /* Czytelna czcionka */
+    font-weight: bold; /* Wyróżnienie tekstu */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Efekt przejścia */
+}
+
+/* Stylizacja dla przycisku SAVE */
+.save-btn {
+    background-color: #28a745; /* Zielony kolor dla akceptacji */
+    color: #ffffff; /* Biały tekst */
+}
+
+.save-btn:hover {
+    background-color: #218838; /* Ciemniejszy zielony przy najechaniu */
+    transform: scale(1.05); /* Delikatne powiększenie */
+}
+
+.save-btn:active {
+    background-color: #1e7e34; /* Jeszcze ciemniejszy zielony przy kliknięciu */
+    transform: scale(0.95); /* Minimalne pomniejszenie */
+}
+
+/* Stylizacja dla przycisku CANCEL */
+.cancel-btn {
+    background-color: #dc3545; /* Czerwony kolor dla anulowania */
+    color: #ffffff; /* Biały tekst */
+}
+
+.cancel-btn:hover {
+    background-color: #c82333; /* Ciemniejszy czerwony przy najechaniu */
+    transform: scale(1.05); /* Delikatne powiększenie */
+}
+
+.cancel-btn:active {
+    background-color: #bd2130; /* Jeszcze ciemniejszy czerwony przy kliknięciu */
+    transform: scale(0.95); /* Minimalne pomniejszenie */
+}
+
+/* Styl dla przycisku + */
+.add-button {
+    position: fixed; /* Stała pozycja */
+    bottom: 50px; /* Odstęp od dołu */
+    right: 50px; /* Odstęp od prawej */
+    width: 60px; /* Szerokość przycisku */
+    height: 60px; /* Wysokość przycisku */
+    background-color: #28a745; /* Zielony kolor */
+    color: white; /* Biały kolor tekstu */
+    border: none; /* Brak obramowania */
+    border-radius: 50%; /* Okrągły kształt */
+    font-size: 24px; /* Rozmiar tekstu */
+    display: flex; /* Flexbox dla wyśrodkowania zawartości */
+    justify-content: center; /* Wyśrodkowanie w poziomie */
+    align-items: center; /* Wyśrodkowanie w pionie */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Cień */
+    cursor: pointer; /* Kursor wskazujący */
+    z-index: 1000; /* Nad innymi elementami */
+    transition: transform 0.3s ease, background-color 0.3s ease; /* Animacje */
+}
+
+.add-button:hover {
+    background-color: #218838; /* Ciemniejszy zielony przy najechaniu */
+    transform: scale(1.1); /* Powiększenie */
+}
+
+.add-button:active {
+    background-color: #1e7e34; /* Jeszcze ciemniejszy zielony przy kliknięciu */
+    transform: scale(0.95); /* Minimalne pomniejszenie */
+}
+
+
+
+
+
+
+
+
+/* Style dialogu */
+.dialog-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog-box {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    width: 300px;
+}
+
+.dialog-buttons {
+    margin-top: 20px;
+}
+
+.btn-confirm {
+    background: #5bc0de;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.btn-cancel {
+    background: #d9534f;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+
+
+
+/* Style for the action icons */
+td a i, td button i {
+    font-size: 1.2rem;
+    color: #007bff; /* Default blue for Edit icon */
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+td button i {
+    color: #dc3545; /* Red color for Delete icon */
+}
+
+/* Hover effects for action icons */
+td a i:hover, td button i:hover {
+    color: #0056b3; /* Darker blue for Edit on hover */
+    transform: scale(1.2); /* Slightly enlarge icon on hover */
+}
+
+td button i:hover {
+    color: #c82333; /* Darker red for Delete on hover */
+}
+
+/* Ensure the button styles don't override */
+td button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+
+
+
+/* General styles for the select dropdown */
+td select {
+    width: 100%; /* Ensure it fills the cell */
+    padding: 8px; /* Add some padding for better spacing */
+    font-size: 1rem; /* Set readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners for modern look */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default arrow styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Add a custom arrow for the dropdown */
+td select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Hover and focus states for better interactivity */
+td select:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+td select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+/* General styles for the select dropdown */
+#supplierType {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#supplierType option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#supplierType:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#supplierType:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+/* Invalid state styling for required fields */
+#supplierType:required:invalid {
+    border-color: #dc3545; /* Red border for invalid */
+    background-color: #f8d7da; /* Light red background */
+    color: #dc3545; /* Red text */
+}
+
+/* Styling for valid state */
+#supplierType:valid {
+    border-color: #28a745; /* Green border for valid */
+    background-color: #d4edda; /* Light green background */
+    color: #155724; /* Green text */
+}
+
+/* General styles for the select dropdown */
+#customerType {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#customerType option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#customerType:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#customerType:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+/* Invalid state styling for required fields */
+#customerType:required:invalid {
+    border-color: #dc3545; /* Red border for invalid */
+    background-color: #f8d7da; /* Light red background */
+    color: #dc3545; /* Red text */
+}
+
+/* Styling for valid state */
+#customerType:valid {
+    border-color: #28a745; /* Green border for valid */
+    background-color: #d4edda; /* Light green background */
+    color: #155724; /* Green text */
+}
+
+
+
+/* General styles for the select dropdown */
+#usergroup {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#usergroup option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#usergroup:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#usergroup:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+/* Invalid state styling for required fields */
+#usergroup:required:invalid {
+    border-color: #dc3545; /* Red border for invalid */
+    background-color: #f8d7da; /* Light red background */
+    color: #dc3545; /* Red text */
+}
+
+/* Styling for valid state */
+#usergroup:valid {
+    border-color: #28a745; /* Green border for valid */
+    background-color: #d4edda; /* Light green background */
+    color: #155724; /* Green text */
+}
+
+/* General styles for the select dropdown */
+#brand-name {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#brand-name option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#brand-name:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#brand-name:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+
+
+/* General styles for the select dropdown */
+#supplier-name
+ {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#supplier-name
+ option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#supplier-name
+:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#supplier-name
+:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+/* General styles for the select dropdown */
+#entity-name
+ {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#entity-name
+ option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#entity-name
+:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#entity-name
+:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+/* General styles for the select dropdown */
+#entity-type
+ {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#entity-type
+ option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#entity-type
+:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#entity-type
+:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+/* General styles for the select dropdown */
+#item-name
+ {
+    width: 100%; /* Full width */
+    padding: 8px; /* Spacing */
+    font-size: 1rem; /* Readable font size */
+    border: 1px solid #ccc; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333; /* Text color */
+    appearance: none; /* Remove default browser styling */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+/* Placeholder for the default option */
+#item-name
+ option[value=""] {
+    color: #999; /* Subtle gray text */
+}
+
+/* Hover and focus styles */
+#item-name
+:hover {
+    border-color: #007bff; /* Highlight border on hover */
+}
+
+#item-name
+:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle blue glow */
+    outline: none; /* Remove default outline */
+}
+
+.status {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    display: inline-block;
+    width: fit-content;
+}
+
+.status.incoming {
+    background-color: #28a745; /* Zielony kolor dla Incoming Goods */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+}
+
+.status.outgoing {
+    background-color: #dc3545; /* Czerwony kolor dla Outgoing Goods */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+}
+
+/* Dodanie stylu hover dla lepszego efektu */
+.status.incoming:hover,
+.status.outgoing:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+    transition: all 0.2s ease-in-out;
+}
+
+
+/* Styl przycisku "Start Selection" */
+.btn.selection {
+    background-color: #4caf50; /* Zielony kolor */
+    border: 1px solid #3e8e41; /* Lekko ciemniejszy odcień */
+}
+
+.btn.selection:hover {
+    background-color: #45a049; /* Jaśniejszy zielony */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px); /* Efekt unoszenia */
+}
+
+/* Styl przycisku "Send Back" */
+.btn.send.back {
+    background-color: #f44336; /* Czerwony kolor */
+    border: 1px solid #d32f2f; /* Lekko ciemniejszy odcień */
+}
+
+.btn.send.back:hover {
+    background-color: #e53935; /* Jaśniejszy czerwony */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px); /* Efekt unoszenia */
+}
+
+/* Efekt kliknięcia */
+.btn:active {
+    transform: translateY(1px); /* Wrażenie "wciskania" */
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+    .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+}
+
+
+.download-btn {
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    display: block;
+}
+.download-btn:hover {
+    background-color: #45a049;
+}
+.chart-container {
+    margin-top: 20px;
+}
+
+
+
