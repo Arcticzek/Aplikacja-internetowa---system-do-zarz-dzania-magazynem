@@ -1774,8 +1774,12 @@ app.post('/api/generate-summary-pdf', async (req, res) => {
 });
 
 
+module.exports = { app, User, Customer,Goods,Supplier,Incoming,Outgoing,Selection };
 
-// Uruchomienie serwera
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+  });
+}
+
